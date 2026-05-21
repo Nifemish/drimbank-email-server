@@ -1,13 +1,18 @@
 const express = require('express');
-const { Resend } = require('resend');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM_EMAIL = process.env.FROM_EMAIL || 'DrimBank <onboarding@resend.dev>';
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER || 'nifemish@gmail.com',
+    pass: process.env.GMAIL_PASS || 'wiwibstfmkpqoynr'
+  }
+});
 
 // Health check
 app.get('/', (req, res) => {
@@ -23,16 +28,16 @@ app.post('/send-email', async (req, res) => {
   }
 
   try {
-    const result = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [to],
+    const result = await transporter.sendMail({
+      from: '"DrimBank" <nifemish@gmail.com>',
+      to: to,
       subject: subject,
       html: html || `<p>${text}</p>`,
-      text: text || '',
+      text: text || ''
     });
 
-    console.log(`✅ Email sent to ${to} | Subject: ${subject} | ID: ${result.data?.id}`);
-    res.json({ ok: true, id: result.data?.id });
+    console.log(`✅ Email sent to ${to} | Subject: ${subject} | ID: ${result.messageId}`);
+    res.json({ ok: true, id: result.messageId });
 
   } catch (err) {
     console.error('❌ Email send error:', err.message);
